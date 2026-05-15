@@ -6,13 +6,28 @@ import firebase_admin
 import requests
 from firebase_admin import credentials, firestore
 
-_KEY_FILE = Path(__file__).parent / "serviceAccountKey.json"
 FIREBASE_API_KEY = "AIzaSyAnZixCpZL56unu85N7XyY3FE9iHdp8oyk"
 
-if not firebase_admin._apps:
-    cred = credentials.Certificate(str(_KEY_FILE))
+
+def _init_firebase():
+    if firebase_admin._apps:
+        return
+    # Streamlit Cloud: secrets から読み込む
+    try:
+        import streamlit as st
+        if "firebase_service_account" in st.secrets:
+            cred = credentials.Certificate(dict(st.secrets["firebase_service_account"]))
+            firebase_admin.initialize_app(cred)
+            return
+    except Exception:
+        pass
+    # ローカル環境: serviceAccountKey.json から読み込む
+    key_file = Path(__file__).parent / "serviceAccountKey.json"
+    cred = credentials.Certificate(str(key_file))
     firebase_admin.initialize_app(cred)
 
+
+_init_firebase()
 db = firestore.client()
 
 
