@@ -1,0 +1,7 @@
+serviceAccountKey.json
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
+recipes.json
+custom_foods.json
+data/
