@@ -68,10 +68,10 @@ saved_recipes = load_recipes(user_email)
 if saved_recipes:
     with st.expander(f"📂 保存済みレシピ（{len(saved_recipes)}件）"):
         for recipe in saved_recipes:
-            rc1, rc2, rc3, rc4 = st.columns([4, 1, 1, 1])
             _kcal_per_bag = calculate_nutrition(recipe["ingredients"])["energy"] / recipe["num_bags"]
-            rc1.write(f"**{recipe['name']}**　{recipe['bag_weight']}g × {recipe['num_bags']}個　{round(_kcal_per_bag)}kcal/袋")
-            if rc2.button("読み込む", key=f"load_{recipe['name']}"):
+            st.write(f"**{recipe['name']}**　{recipe['bag_weight']}g × {recipe['num_bags']}個　{round(_kcal_per_bag)}kcal/袋")
+            rc1, rc2, rc3 = st.columns(3)
+            if rc1.button("📂 読み込む", key=f"load_{recipe['name']}", use_container_width=True):
                 st.session_state.load_id += 1
                 for k in list(st.session_state.keys()):
                     if k.startswith("amount_"):
@@ -82,7 +82,7 @@ if saved_recipes:
                 st.session_state.product_name = recipe["name"]
                 st.session_state.loaded_recipe_name = recipe["name"]
                 st.rerun()
-            if rc3.button("複製", key=f"dup_{recipe['name']}"):
+            if rc2.button("📋 複製", key=f"dup_{recipe['name']}", use_container_width=True):
                 new_name = duplicate_recipe(user_email, recipe["name"])
                 st.session_state.load_id += 1
                 for k in list(st.session_state.keys()):
@@ -95,9 +95,10 @@ if saved_recipes:
                 st.session_state.loaded_recipe_name = new_name
                 st.toast(f"「{new_name}」を作成しました。商品名と重量を変更して保存してください。", icon="📋")
                 st.rerun()
-            if rc4.button("削除", key=f"del_recipe_{recipe['name']}"):
+            if rc3.button("🗑️ 削除", key=f"del_recipe_{recipe['name']}", use_container_width=True):
                 delete_recipe(user_email, recipe["name"])
                 st.rerun()
+            st.divider()
 
 # ── 商品名 ＆ 1袋の重量 ＆ 個数 ──────────────────────────────────────────
 p_col, w_col, n_col, save_col = st.columns([3, 2, 2, 1], vertical_alignment="bottom")
@@ -255,17 +256,12 @@ st.subheader("材料リスト")
 if not st.session_state.ingredients:
     st.info("まだ材料が追加されていません。上のフォームから材料を追加してください。")
 else:
-    header_cols = st.columns([3, 1.5, 1.5, 1.5, 1.5, 1.5, 0.8])
-    headers = ["食品名", "分量(g)", "熱量(kcal)", "P(g)", "F(g)", "C(g)", ""]
-    for col, h in zip(header_cols, headers):
-        col.markdown(f"**{h}**")
-
     to_delete = None
     for i, ing in enumerate(st.session_state.ingredients):
-        row_cols = st.columns([3, 1.5, 1.5, 1.5, 1.5, 1.5, 0.8])
-        row_cols[0].write(ing["name"])
+        row_cols = st.columns([3, 2, 0.8])
+        row_cols[0].write(f"**{ing['name']}**")
         new_amount = row_cols[1].number_input(
-            "分量",
+            "分量(g)",
             min_value=0.1,
             max_value=10000.0,
             value=float(ing["amount"]),
@@ -277,33 +273,34 @@ else:
             st.session_state.ingredients[i]["amount"] = new_amount
             st.rerun()
         ratio = new_amount / 100.0
-        row_cols[2].write(f"{ing['energy'] * ratio:.1f}")
-        row_cols[3].write(f"{ing['protein'] * ratio:.1f}")
-        row_cols[4].write(f"{ing['fat'] * ratio:.1f}")
-        row_cols[5].write(f"{ing['carb'] * ratio:.1f}")
-        if row_cols[6].button("✕", key=f"del_{i}"):
+        if row_cols[2].button("✕", key=f"del_{i}"):
             to_delete = i
+        st.caption(
+            f"熱量: {ing['energy'] * ratio:.1f}kcal　"
+            f"たんぱく質: {ing['protein'] * ratio:.1f}g　"
+            f"脂質: {ing['fat'] * ratio:.1f}g　"
+            f"炭水化物: {ing['carb'] * ratio:.1f}g"
+        )
 
     if to_delete is not None:
         st.session_state.ingredients.pop(to_delete)
         st.rerun()
 
     n_total = calculate_nutrition(st.session_state.ingredients)
-    total_cols = st.columns([3, 1.5, 1.5, 1.5, 1.5, 1.5, 0.8])
-    label_total = "**合計**" if num_bags == 1 else f"**合計（{num_bags}個分）**"
-    total_cols[0].markdown(label_total)
-    total_cols[2].markdown(f"**{n_total['energy']:.1f}**")
-    total_cols[3].markdown(f"**{n_total['protein']:.1f}**")
-    total_cols[4].markdown(f"**{n_total['fat']:.1f}**")
-    total_cols[5].markdown(f"**{n_total['carb']:.1f}**")
-
+    label_total = "合計" if num_bags == 1 else f"合計（{num_bags}個分）"
+    st.markdown(
+        f"**{label_total}** ─ 熱量: **{n_total['energy']:.1f}kcal**　"
+        f"たんぱく質: **{n_total['protein']:.1f}g**　"
+        f"脂質: **{n_total['fat']:.1f}g**　"
+        f"炭水化物: **{n_total['carb']:.1f}g**"
+    )
     if num_bags > 1:
-        per_cols = st.columns([3, 1.5, 1.5, 1.5, 1.5, 1.5, 0.8])
-        per_cols[0].markdown("**↳ 1袋あたり**")
-        per_cols[2].markdown(f"**{n_total['energy'] / num_bags:.1f}**")
-        per_cols[3].markdown(f"**{n_total['protein'] / num_bags:.1f}**")
-        per_cols[4].markdown(f"**{n_total['fat'] / num_bags:.1f}**")
-        per_cols[5].markdown(f"**{n_total['carb'] / num_bags:.1f}**")
+        st.markdown(
+            f"**↳ 1袋あたり** ─ 熱量: **{n_total['energy'] / num_bags:.1f}kcal**　"
+            f"たんぱく質: **{n_total['protein'] / num_bags:.1f}g**　"
+            f"脂質: **{n_total['fat'] / num_bags:.1f}g**　"
+            f"炭水化物: **{n_total['carb'] / num_bags:.1f}g**"
+        )
 
     if st.button("材料をすべてクリア"):
         st.session_state.ingredients = []
