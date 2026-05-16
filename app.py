@@ -27,6 +27,7 @@ except Exception:
 
 cookies = EncryptedCookieManager(prefix="nlt_", password=_cookie_password)
 if not cookies.ready():
+    st.info("読み込み中...")
     st.stop()
 
 # Streamlitのデフォルトメニュー・フッター・ツールバーを非表示
