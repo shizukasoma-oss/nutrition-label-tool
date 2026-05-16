@@ -25,6 +25,10 @@ footer {visibility: hidden;}
 header {visibility: hidden;}
 [data-testid="stToolbar"] {visibility: hidden;}
 [data-testid="stDecoration"] {visibility: hidden;}
+[data-testid="stStatusWidget"] {visibility: hidden;}
+[data-testid="stBottom"] {visibility: hidden;}
+.viewerBadge_link__1S137 {display: none;}
+.styles_viewerBadge__1yB5_ {display: none;}
 </style>
 """, unsafe_allow_html=True)
 
