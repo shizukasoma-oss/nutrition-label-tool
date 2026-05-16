@@ -17,6 +17,17 @@ from recipes import delete_recipe, duplicate_recipe, load_recipes, save_recipe
 
 st.set_page_config(page_title="栄養成分表示ラベル作成", page_icon="🏷️", layout="wide")
 
+# Streamlitのデフォルトメニュー・フッター・ツールバーを非表示
+st.markdown("""
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+[data-testid="stToolbar"] {visibility: hidden;}
+[data-testid="stDecoration"] {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
+
 # ── ログイン画面 ───────────────────────────────────────────────────────────
 if "user" not in st.session_state:
     st.title("🏷️ 栄養成分表示ラベル作成ツール")
