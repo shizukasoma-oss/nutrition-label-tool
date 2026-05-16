@@ -4,6 +4,7 @@ import json
 
 import streamlit as st
 import streamlit.components.v1 as components
+from streamlit_cookies_manager import EncryptedCookieManager
 
 from calculator import calculate_nutrition, format_label
 from firebase_utils import is_allowed_user, sign_in
@@ -16,6 +17,17 @@ from food_db import (
 from recipes import delete_recipe, duplicate_recipe, load_recipes, save_recipe
 
 st.set_page_config(page_title="栄養成分表示ラベル作成", page_icon="🏷️", layout="wide")
+
+# Cookie管理（ログイン状態の永続化）
+try:
+    import streamlit as _st
+    _cookie_password = _st.secrets.get("cookie_password", "nutrition-label-tool-secret-2024")
+except Exception:
+    _cookie_password = "nutrition-label-tool-secret-2024"
+
+cookies = EncryptedCookieManager(prefix="nlt_", password=_cookie_password)
+if not cookies.ready():
+    st.stop()
 
 # Streamlitのデフォルトメニュー・フッター・ツールバーを非表示
 st.markdown("""
@@ -34,6 +46,12 @@ header {display: none !important;}
 """, unsafe_allow_html=True)
 
 # ── ログイン画面 ───────────────────────────────────────────────────────────
+# Cookieからログイン状態を復元
+if "user" not in st.session_state:
+    saved_email = cookies.get("user_email", "")
+    if saved_email and is_allowed_user(saved_email):
+        st.session_state.user = {"email": saved_email}
+
 if "user" not in st.session_state:
     st.title("🏷️ 栄養成分表示ラベル作成ツール")
     st.subheader("ログイン")
@@ -44,6 +62,8 @@ if "user" not in st.session_state:
             result = sign_in(email, password)
         if result and is_allowed_user(result["email"]):
             st.session_state.user = {"email": result["email"]}
+            cookies["user_email"] = result["email"]
+            cookies.save()
             st.rerun()
         else:
             st.session_state.pop("_login_error", None)
@@ -77,6 +97,8 @@ title_col.title("🏷️ 栄養成分表示ラベル作成ツール")
 title_col.caption("材料と分量を入力すると、食品表示用のテキストを自動生成します。")
 if logout_col.button("ログアウト"):
     del st.session_state["user"]
+    cookies["user_email"] = ""
+    cookies.save()
     st.rerun()
 
 # ── 保存済みレシピを読み込む ───────────────────────────────────────────────
