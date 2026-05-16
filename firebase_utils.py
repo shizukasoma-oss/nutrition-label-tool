@@ -31,6 +31,17 @@ _init_firebase()
 db = firestore.client()
 
 
+def _get_referer() -> str:
+    """実行環境に応じたRefererを返す"""
+    try:
+        import streamlit as st
+        if "firebase_service_account" in st.secrets:
+            return "https://nutrition-label-tool-8acrwtivtb9pwn6tiy5q2y.streamlit.app"
+    except Exception:
+        pass
+    return "http://localhost:8501"
+
+
 def sign_in(email: str, password: str) -> dict | None:
     """メール/パスワードでFirebase認証。成功時にユーザー情報dictを返す。"""
     url = (
@@ -41,7 +52,7 @@ def sign_in(email: str, password: str) -> dict | None:
         resp = requests.post(
             url,
             json={"email": email, "password": password, "returnSecureToken": True},
-            headers={"Referer": "http://localhost:8501"},
+            headers={"Referer": _get_referer()},
             timeout=10,
         )
         if resp.status_code == 200:
